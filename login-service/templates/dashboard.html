@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h2>Welcome, {{ email }}</h2>
+    <h3>Account Balance: {{ balance }}</h3>
+
+    <h4>Recent Transactions:</h4>
+    <ul>
+        {% for txn in transactions %}
+        <li>{{ txn.date }} - {{ txn.desc }} - {{ txn.amount }}</li>
+        {% endfor %}
+    </ul>
+
+    <a href="/logout"><button>Logout</button></a>
+</body>
+</html>
+
