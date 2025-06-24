@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Account Dashboard</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <h1>BANKSTACK Account Service</h1>
+
+  {% if account %}
+    <h3>Account Details</h3>
+    <p>Email: {{ account.email }}</p>
+    <p>Type: {{ account.type }}</p>
+    <p>Balance: ₹{{ account.balance }}</p>
+  {% else %}
+    <h3>Create Account</h3>
+    <form method="post">
+      <label>Account Type:</label>
+      <select name="account_type">
+        <option value="Savings">Savings</option>
+        <option value="Current">Current</option>
+      </select>
+      <button type="submit">Create</button>
+    </form>
+  {% endif %}
+</body>
+</html>
+

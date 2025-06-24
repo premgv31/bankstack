@@ -29,6 +29,22 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  account-service:
+    build: ./account-service
+    ports:
+      - "8001:8001"
+    environment:
+      - DB_HOST=bankstack-db
+      - DB_NAME=bankstack
+      - DB_USER=postgres
+      - DB_PASS=mypassword
+      - JWT_SECRET=bankstack-secret-key
+      - JWT_ALGORITHM=HS256
+    volumes:
+      - ./account-service:/app
+    depends_on:
+      - bankstack-db
+
 volumes:
   pgdata:
 

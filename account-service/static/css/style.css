@@ -1,0 +1,16 @@
+body {
+  font-family: sans-serif;
+  padding: 30px;
+  background: #f8f8f8;
+}
+h1 {
+  color: #005c99;
+}
+form {
+  margin-top: 20px;
+}
+input, select, button {
+  padding: 8px;
+  margin: 5px;
+}
+
