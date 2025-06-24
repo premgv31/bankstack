@@ -27,8 +27,33 @@ Base = declarative_base()
 engine = create_engine(DB_URL)
 SessionLocal = sessionmaker(bind=engine)
 
-# FastAPI setup
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+
 app = FastAPI()
+
+class JWTValidationMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        path = request.url.path
+        if path in ["/login", "/register", "/forgot-password", "/static", "/"]:
+            return await call_next(request)
+
+        token = request.cookies.get("access_token")
+        if not token:
+            return RedirectResponse("/login")
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            request.state.user_email = payload.get("sub")
+        except JWTError:
+            return RedirectResponse("/login?error=session_expired")
+
+        response = await call_next(request)
+        return response
+
+# Add the middleware
+app.add_middleware(JWTValidationMiddleware)
+
+# FastAPI setup
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
@@ -44,6 +69,14 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     email = Column(String, unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
+
+class LoginLog(Base):
+    __tablename__ = "login_logs"
+    id = Column(Integer, primary_key=True)
+    email = Column(String, nullable=False)
+    timestamp = Column(String, nullable=False)
+    ip_address = Column(String, nullable=False)
+    status = Column(String, nullable=False)  # success or fail
 
 # Pydantic models
 class UserCreate(BaseModel):
@@ -84,6 +117,16 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+def log_login_attempt(db: Session, email: str, ip: str, status: str):
+    log = LoginLog(
+        email=email,
+        timestamp=datetime.utcnow().isoformat(),
+        ip_address=ip,
+        status=status
+    )
+    db.add(log)
+    db.commit()
+
 # Routes
 @app.get("/", response_class=HTMLResponse)
 def root():
@@ -113,13 +156,18 @@ def get_login_form(request: Request):
 
 @app.post("/login")
 def post_login(
+    request: Request,
     email: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
     db_user = get_user_by_email(db, email)
+    client_ip = request.client.host or "unknown"
+
     if not db_user or not verify_password(password, db_user.hashed_password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+       log_login_attempt(db, email, client_ip, "fail")
+       raise HTTPException(status_code=401, detail="Invalid credentials")
+    log_login_attempt(db, email, client_ip, "success")
     token = create_access_token({"sub": db_user.email})
     response = RedirectResponse("/me", status_code=302)
     response.set_cookie(key="access_token", value=token, httponly=True)
@@ -147,8 +195,26 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
 def on_startup():
     Base.metadata.create_all(bind=engine)
 
+@app.get("/dashboard", response_class=HTMLResponse)
+def get_dashboard(request: Request):
+    return templates.TemplateResponse("dashboard.html", {"request": request})
+
 @app.get("/logout")
 def logout():
     response = RedirectResponse("/login", status_code=302)
     response.delete_cookie("access_token")
     return response
+
+@app.get("/forgot-password", response_class=HTMLResponse)
+def forgot_password_form(request: Request):
+    return templates.TemplateResponse("forgot_password.html", {"request": request})
+
+@app.post("/forgot-password")
+def forgot_password_submit(email: str = Form(...), db: Session = Depends(get_db)):
+    user = get_user_by_email(db, email)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    # Simulate sending email
+    print(f"Reset link sent to: {email} — Token: MOCK_RESET_TOKEN")
+    return HTMLResponse("<h3>Reset link sent to your email (mocked)</h3>")
+

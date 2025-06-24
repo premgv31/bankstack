@@ -6,6 +6,10 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+	{% if request.query_params.get('error') == 'session_expired' %}
+  <p style="color:red;">Your session has expired. Please login again.</p>
+{% endif %}
+
     <h2>Login</h2>
     <form action="/login" method="post">
         <label>Email:</label><input type="email" name="email" required><br>

@@ -1,21 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>User Dashboard</title>
-    <link rel="stylesheet" href="/static/style.css">
+  <title>Bankstack Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial;
+      margin: 40px;
+    }
+    h2 {
+      margin-bottom: 30px;
+    }
+    canvas {
+      max-width: 600px;
+      margin-bottom: 50px;
+    }
+  </style>
 </head>
 <body>
-    <h2>Welcome, {{ email }}</h2>
-    <h3>Account Balance: {{ balance }}</h3>
+  <h2>Welcome to your Bankstack Dashboard!</h2>
 
-    <h4>Recent Transactions:</h4>
-    <ul>
-        {% for txn in transactions %}
-        <li>{{ txn.date }} - {{ txn.desc }} - {{ txn.amount }}</li>
-        {% endfor %}
-    </ul>
+  <canvas id="accountChart"></canvas>
+  <canvas id="loginChart"></canvas>
 
-    <a href="/logout"><button>Logout</button></a>
+  <script>
+    const accountChart = new Chart(document.getElementById('accountChart'), {
+      type: 'pie',
+      data: {
+        labels: ['Savings', 'Current', 'Loan'],
+        datasets: [{
+          label: 'Accounts',
+          data: [45, 25, 30],
+          backgroundColor: ['#4caf50', '#2196f3', '#f44336']
+        }]
+      }
+    });
+
+    const loginChart = new Chart(document.getElementById('loginChart'), {
+      type: 'line',
+      data: {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+        datasets: [{
+          label: 'Logins',
+          data: [5, 12, 7, 15, 9],
+          borderColor: '#673ab7',
+          fill: false
+        }]
+      }
+    });
+  </script>
 </body>
 </html>
 
