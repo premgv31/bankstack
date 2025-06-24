@@ -1,0 +1,5 @@
+pgdata/
+__pycache__/
+*.pyc
+*.env
+login-service/__pycache__/
